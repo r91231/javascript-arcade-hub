@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סיימון - ארקייד</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f8fafc; padding: 100px 20px 40px 20px; }
+        
+        .global-navbar { width: 100%; background-color: #0f172a; border-bottom: 1px solid #334155; position: fixed; top: 0; left: 0; z-index: 1000; }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+        .nav-brand { font-size: 20px; font-weight: bold; color: #3b82f6; text-decoration: none; }
+        .nav-toggle-btn { background: none; border: 1px solid #334155; color: #f8fafc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .nav-dropdown { display: none; width: 100%; background-color: #0f172a; border-bottom: 1px solid #334155; position: absolute; top: 100%; left: 0; box-shadow: 0 10px 20px rgba(0,0,0,0.3); padding: 10px 0; }
+        .nav-dropdown.show { display: block; }
+        .nav-links-list { list-style: none; max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-link-item a { display: block; padding: 12px 16px; color: #cbd5e1; text-decoration: none; border-radius: 6px; font-weight: 500; }
+        .nav-link-item a:hover { background-color: #1e293b; color: #3b82f6; padding-right: 24px; }
+
+        .game-container { text-align: center; background-color: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); border: 1px solid #334155; width: 100%; max-width: 440px; }
+        h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+        
+        .status-panel { margin-bottom: 20px; }
+        #levelDisplay { font-size: 22px; color: #3b82f6; font-weight: bold; margin-bottom: 4px; }
+        #infoMessage { font-size: 14px; color: #94a3b8; margin-bottom: 14px; }
+        
+        /* פאנל שיאים בסיימון */
+        .highscore-panel { display: flex; justify-content: space-between; background-color: #0f172a; padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; font-size: 13px; color: #cbd5e1; margin-bottom: 20px; }
+        .highscore-panel span { font-weight: bold; color: #3b82f6; }
+
+        .simon-board { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 260px; height: 260px; margin: 0 auto 24px auto; }
+        .color-btn { border-radius: 16px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; opacity: 0.4; border: none; }
+        #red { background-color: #ef4444; } #blue { background-color: #3b82f6; } #green { background-color: #10b981; } #yellow { background-color: #f59e0b; }
+        .color-btn.active { opacity: 1 !important; transform: scale(1.02); box-shadow: 0 0 30px currentColor; }
+        
+        .btn-start { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; background-color: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-start:hover { background-color: #059669; }
+        .btn-start:disabled { background-color: #475569; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <nav class="global-navbar">
+        <div class="nav-container">
+            <a href="g_menu.html" class="nav-brand">🕹️ ARCADE</a>
+            <button class="nav-toggle-btn" id="navToggleBtn">☰ ניווט מהיר</button>
+        </div>
+        <div class="nav-dropdown" id="navDropdown">
+            <ul class="nav-links-list">
+                <li class="nav-link-item"><a href="g_menu.html">🏠 תפריט ראשי</a></li>
+                <li class="nav-link-item"><a href="g_game.html">🎯 משחק: מציאת המספר</a></li>
+                <li class="nav-link-item"><a href="g_simon.html">🧠 משחק: סיימון אמר</a></li>
+                <li class="nav-link-item"><a href="g_reveal.html">🖼️ משחק: חשיפת תמונה</a></li>
+                <li class="nav-link-item logout-item"><a href="#" id="menuLogoutLink">🚪 התנתק מהחשבון</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>סיימון (Simon)</h1>
+        
+        <div class="status-panel">
+            <div id="levelDisplay">סיימון אמר</div>
+            <div id="infoMessage">לחצו על לחצן ההתחלה כדי להפעיל את הרצף.</div>
+        </div>
+
+        <div class="highscore-panel">
+            <div>שיא אישי: <span id="simonPersonal">0</span></div>
+            <div>שיא כללי: <span id="simonGlobal">0</span></div>
+        </div>
+
+        <div class="simon-board">
+            <button class="color-btn" id="green" style="color: #10b981;"></button>
+            <button class="color-btn" id="red" style="color: #ef4444;"></button>
+            <button class="color-btn" id="yellow" style="color: #f59e0b;"></button>
+            <button class="color-btn" id="blue" style="color: #3b82f6;"></button>
+        </div>
+
+        <button id="startBtn" class="btn-start">התחל משחק</button>
+    </div>
+
+    <script>
+        let currentUser = null; let usernameKey = "";
+        const colors = ['green', 'red', 'yellow', 'blue'];
+        let gameSequence = []; let userSequence = []; let level = 0;
+        let isPlayingSequence = false; let userTurn = false;
+
+        const startBtn = document.getElementById('startBtn');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const infoMessage = document.getElementById('infoMessage');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+            const loggedInSession = sessionStorage.getItem('isLoggedIn') === 'true';
+            if (!loggedInLocal && !loggedInSession) { window.location.href = 'g_enter.html'; return; }
+
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) { usernameKey = currentUser.username.toLowerCase(); }
+
+            loadSimonHighscores();
+
+            const toggleBtn = document.getElementById('navToggleBtn');
+            const dropdown = document.getElementById('navDropdown');
+            toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            document.addEventListener('click', () => dropdown.classList.remove('show'));
+
+            document.getElementById('menuLogoutLink').addEventListener('click', (e) => {
+                e.preventDefault(); localStorage.clear(); sessionStorage.clear(); window.location.href = 'g_enter.html';
+            });
+        });
+
+        function loadSimonHighscores() {
+            document.getElementById('simonPersonal').textContent = localStorage.getItem(`highscore_simon_${usernameKey}`) || '0';
+            document.getElementById('simonGlobal').textContent = localStorage.getItem('global_highscore_simon') || '0';
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(color) {
+            const frequencies = { green: 261.63, red: 329.63, yellow: 392.00, blue: 523.25, error: 120 };
+            const osc = audioCtx.createOscillator(); 
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = frequencies[color] || 200;
+            osc.type = color === 'error' ? 'sawtooth' : 'sine';
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+
+        startBtn.addEventListener('click', () => { startBtn.disabled = true; gameSequence = []; level = 0; nextRound(); });
+
+        function nextRound() {
+            userSequence = []; level++; levelDisplay.textContent = `שלב ${level}`;
+            infoMessage.textContent = 'המחשב מציג את הרצף...'; userTurn = false;
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            gameSequence.push(randomColor); playSequence();
+        }
+
+        function playSequence() {
+            isPlayingSequence = true; let i = 0;
+            const interval = setInterval(() => {
+                flashButton(gameSequence[i]); i++;
+                if (i >= gameSequence.length) { clearInterval(interval); isPlayingSequence = false;
+                    setTimeout(() => { userTurn = true; infoMessage.textContent = 'תורכם! חזרו על הרצף.'; }, 500);
+                }
+            }, 600);
+        }
+
+        function flashButton(color) {
+            const btn = document.getElementById(color); btn.classList.add('active'); playTone(color);
+            setTimeout(() => { btn.classList.remove('active'); }, 350);
+        }
+
+        colors.forEach(color => {
+            document.getElementById(color).addEventListener('click', () => {
+                if (!userTurn || isPlayingSequence) return;
+                flashButton(color); userSequence.push(color); checkUserSelection(userSequence.length - 1);
+            });
+        });
+
+        function checkUserSelection(currentIndex) {
+            if (userSequence[currentIndex] !== gameSequence[currentIndex]) {
+                playTone('error');
+                
+                // חישוב השיא (הציון הוא מספר השלבים שהושלמו בהצלחה, כלומר level - 1)
+                let finalScore = level - 1;
+                levelDisplay.textContent = 'המשחק נגמר!';
+                
+                let currentPersonal = parseInt(localStorage.getItem(`highscore_simon_${usernameKey}`)) || 0;
+                let currentGlobal = parseInt(localStorage.getItem('global_highscore_simon')) || 0;
+                let statusMsg = `הגעתם לשלב ${level}. (ניקוד: ${finalScore})`;
+
+                if (finalScore > currentPersonal) {
+                    localStorage.setItem(`highscore_simon_${usernameKey}`, finalScore);
+                    statusMsg += " 🎉 שיא אישי חדש!";
+                }
+                if (finalScore > currentGlobal) {
+                    localStorage.setItem('global_highscore_simon', finalScore);
+                    statusMsg = `🏆 שיא כללי חדש לאתר: ${finalScore}!`;
+                }
+
+                infoMessage.textContent = statusMsg;
+                loadSimonHighscores();
+
+                userTurn = false; startBtn.disabled = false; startBtn.textContent = 'נסה שוב'; return;
+            }
+            if (userSequence.length === gameSequence.length) { userTurn = false; infoMessage.textContent = 'כל הכבוד!'; setTimeout(nextRound, 1000); }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>אתגר הקוביות</title>
+    <style>
+        /* (שמור על ה-CSS הקודם ללא שינוי) */
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f8fafc; }
+        .back-btn { margin-top: 20px; color: #94a3b8; text-decoration: none; font-size: 14px; }
+        .back-btn:hover { color: #3b82f6; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>אתגר הקוביות</h1>
+        <a href="g_menu.html" class="back-btn">← חזרה לתפריט הראשי</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // בדיקת חיבור מיידית
+            const loggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+            if (!loggedIn) {
+                window.location.href = 'g_enter.html';
+                return;
+            }
+            
+            // טעינת שם המשתמש והמשך לוגיקת המשחק כרגיל...
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) { usernameKey = currentUser.username.toLowerCase(); }
+            loadHighscores();
+            // ... שאר ה-JS של המשחק ...
+        });
+    </script>
+</body>
+</html>

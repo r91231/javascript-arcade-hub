@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מציאת המספר - ארקייד</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f8fafc; padding: 100px 20px 40px 20px; }
+        
+        .global-navbar { width: 100%; background-color: #0f172a; border-bottom: 1px solid #334155; position: fixed; top: 0; left: 0; z-index: 1000; }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+        .nav-brand { font-size: 20px; font-weight: bold; color: #3b82f6; text-decoration: none; }
+        .nav-toggle-btn { background: none; border: 1px solid #334155; color: #f8fafc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .nav-dropdown { display: none; width: 100%; background-color: #0f172a; border-bottom: 1px solid #334155; position: absolute; top: 100%; left: 0; box-shadow: 0 10px 20px rgba(0,0,0,0.3); padding: 10px 0; }
+        .nav-dropdown.show { display: block; }
+        .nav-links-list { list-style: none; max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-link-item a { display: block; padding: 12px 16px; color: #cbd5e1; text-decoration: none; border-radius: 6px; font-weight: 500; }
+        .nav-link-item a:hover { background-color: #1e293b; color: #3b82f6; padding-right: 24px; }
+
+        .game-container { text-align: center; background-color: #1e293b; padding: 36px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); max-width: 480px; width: 100%; border: 1px solid #334155; }
+        h1 { margin-bottom: 6px; font-size: 26px; font-weight: 700; }
+        
+        .status-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; background-color: #0f172a; padding: 14px; border-radius: 10px; border: 1px solid #334155; font-size: 14px; text-align: right; }
+        .status-item span { font-weight: bold; color: #3b82f6; }
+        
+        #targetDisplay { font-size: 22px; color: #10b981; font-weight: bold; margin-bottom: 20px; background-color: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+        .number-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+        .number-btn { background-color: #0f172a; border: 1px solid #334155; color: #cbd5e1; padding: 16px; font-size: 18px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+        .number-btn:hover { background-color: #334155; color: #f8fafc; border-color: #3b82f6; }
+        
+        .btn-control { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; background-color: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-control:hover { background-color: #2563eb; }
+    </style>
+</head>
+<body>
+
+    <nav class="global-navbar">
+        <div class="nav-container">
+            <a href="g_menu.html" class="nav-brand">🕹️ ARCADE</a>
+            <button class="nav-toggle-btn" id="navToggleBtn">☰ ניווט מהיר</button>
+        </div>
+        <div class="nav-dropdown" id="navDropdown">
+            <ul class="nav-links-list">
+                <li class="nav-link-item"><a href="g_menu.html">🏠 תפריט ראשי</a></li>
+                <li class="nav-link-item"><a href="g_game.html">🎯 משחק: מציאת המספר</a></li>
+                <li class="nav-link-item"><a href="g_simon.html">🧠 משחק: סיימון אמר</a></li>
+                <li class="nav-link-item"><a href="g_reveal.html">🖼️ משחק: חשיפת תמונה</a></li>
+                <li class="nav-link-item logout-item"><a href="#" id="menuLogoutLink">🚪 התנתק מהחשבון</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>מציאת המספר</h1>
+        
+        <div class="status-panel">
+            <div class="status-item">נוכחי: <span id="score">0</span></div>
+            <div class="status-item">זמן נותר: <span id="timer">10</span> ש'</div>
+            <div class="status-item">שיא אישי: <span id="personalBest">0</span></div>
+            <div class="status-item">שיא כללי: <span id="globalBest">0</span></div>
+        </div>
+
+        <div id="targetDisplay">לחצו על התחל משחק!</div>
+        <div class="number-grid" id="numberGrid"></div>
+
+        <button id="actionBtn" class="btn-control">התחל משחק</button>
+    </div>
+
+    <script>
+        let score = 0; let timeLeft = 10; let timerInterval = null; let targetNumber = 0; let isPlaying = false;
+        let currentUser = null; let usernameKey = "";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+            const loggedInSession = sessionStorage.getItem('isLoggedIn') === 'true';
+            if (!loggedInLocal && !loggedInSession) { window.location.href = 'g_enter.html'; return; }
+
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) { usernameKey = currentUser.username.toLowerCase(); }
+
+            // טעינת שיאים ראשונית מה-Storage
+            loadHighscores();
+
+            const toggleBtn = document.getElementById('navToggleBtn');
+            const dropdown = document.getElementById('navDropdown');
+            toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            document.addEventListener('click', () => dropdown.classList.remove('show'));
+
+            document.getElementById('menuLogoutLink').addEventListener('click', (e) => {
+                e.preventDefault(); localStorage.clear(); sessionStorage.clear(); window.location.href = 'g_enter.html';
+            });
+            
+            document.getElementById('actionBtn').addEventListener('click', handleAction);
+        });
+
+        function loadHighscores() {
+            document.getElementById('personalBest').textContent = localStorage.getItem(`highscore_findnum_${usernameKey}`) || '0';
+            document.getElementById('globalBest').textContent = localStorage.getItem('global_highscore_findnum') || '0';
+        }
+
+        function handleAction() { if (!isPlaying) { startGame(); } else { resetGame(); } }
+
+        function startGame() {
+            isPlaying = true; score = 0; timeLeft = 10;
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('actionBtn').textContent = 'אפס משחק';
+            generateRound(); startTimer();
+        }
+
+        function generateRound() {
+            const grid = document.getElementById('numberGrid'); grid.innerHTML = '';
+            let numbers = [];
+            while(numbers.length < 16) {
+                let num = Math.floor(Math.random() * 90) + 10;
+                if(!numbers.includes(num)) numbers.push(num);
+            }
+            targetNumber = numbers[Math.floor(Math.random() * numbers.length)];
+            document.getElementById('targetDisplay').textContent = `מצא את המספר: ${targetNumber}`;
+
+            numbers.forEach(num => {
+                const btn = document.createElement('button'); btn.classList.add('number-btn'); btn.textContent = num;
+                btn.addEventListener('click', () => checkSelection(num)); grid.appendChild(btn);
+            });
+        }
+
+        function checkSelection(selectedNum) {
+            if (!isPlaying) return;
+            if (selectedNum === targetNumber) {
+                score++; document.getElementById('score').textContent = score;
+                timeLeft = Math.min(timeLeft + 2, 10);
+                document.getElementById('timer').textContent = timeLeft;
+                generateRound();
+            } else { gameOver(false); }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--; document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) { gameOver(true); }
+            }, 1000);
+        }
+
+        function gameOver(isTimeOut) {
+            isPlaying = false; clearInterval(timerInterval);
+            document.getElementById('numberGrid').innerHTML = '';
+            document.getElementById('actionBtn').textContent = 'שחק שוב';
+            
+            // עדכון ובדיקת שיאים
+            let currentPersonal = parseInt(localStorage.getItem(`highscore_findnum_${usernameKey}`)) || 0;
+            let currentGlobal = parseInt(localStorage.getItem('global_highscore_findnum')) || 0;
+            let isNewPersonal = false; let isNewGlobal = false;
+
+            if (score > currentPersonal) {
+                localStorage.setItem(`highscore_findnum_${usernameKey}`, score);
+                isNewPersonal = true;
+            }
+            if (score > currentGlobal) {
+                localStorage.setItem('global_highscore_findnum', score);
+                isNewGlobal = true;
+            }
+            loadHighscores();
+
+            let msg = isTimeOut ? `נגמר הזמן! הניקוד: ${score}. ` : `טעות! המשחק נגמר. הניקוד: ${score}. `;
+            if (isNewGlobal) msg += "🏆 שברתם את השיא הכללי של האתר!!";
+            else if (isNewPersonal) msg += "🎉 שברתם את השיא האישי שלכם!";
+            
+            document.getElementById('targetDisplay').textContent = msg;
+        }
+
+        function resetGame() {
+            isPlaying = false; clearInterval(timerInterval);
+            document.getElementById('numberGrid').innerHTML = '';
+            document.getElementById('score').textContent = '0';
+            document.getElementById('timer').textContent = '10';
+            document.getElementById('targetDisplay').textContent = 'לחצו על התחל משחק!';
+            document.getElementById('actionBtn').textContent = 'התחל משחק';
+        }
+    </script>
+</body>
+</html>
